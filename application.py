@@ -1,5 +1,7 @@
 from keras.preprocessing.image import img_to_array
 from keras.models import load_model
+import firebase_admin
+from firebase_admin import credentials, db
 from flask_restplus import Api, Resource, fields
 from flask import Flask, request, jsonify
 import numpy as np
@@ -8,6 +10,12 @@ from PIL import Image
 from keras.models import model_from_json
 import tensorflow as tf
 from tensorflow.python.keras.backend import set_session
+
+cred = credentials.Certificate("picint-firebase-adminsdk-5l44x-d3375d3381.json")
+firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://picint.firebaseio.com/'
+})
+interactions_ref = db.reference('interactions')
 
 app = Flask(__name__)
 api = Api(app, version='1.0', title='MNIST Classification', description='CNN for Mnist')
@@ -42,6 +50,7 @@ class CNNPrediction(Resource):
     def post(self):
         args = single_parser.parse_args()
         image_file = args.file
+        image_filename = image_file.filename
         image_file.save('jonasz.png')
         img = Image.open('jonasz.png')
         image_red = img.resize((28, 28))
@@ -54,9 +63,6 @@ class CNNPrediction(Resource):
         print(image.shape)
         x = image.reshape(1, 28, 28, 1)
         x = x/255
-        # This is not good, because this code implies that the model will be
-        # loaded each and every time a new request comes in.
-        # model = load_model('my_model.h5')
 
         with graph.as_default():
             set_session(sess)
@@ -65,6 +71,10 @@ class CNNPrediction(Resource):
         print(np.argmax(out[0]))
         r = np.argmax(out[0])
 
+        # Log interactions
+        interactions_ref.push({
+            'name': image_filename
+        })
         return {'prediction': str(r)}
 
 if __name__ == '__main__':

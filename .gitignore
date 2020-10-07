@@ -132,3 +132,6 @@ dmypy.json
 *.zip
 
 .DS_Store
+
+# Firebase Creds
+picint-firebase-adminsdk-5l44x-d3375d3381.json
