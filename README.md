@@ -1,2 +1,2 @@
 # picint
-An API for extracting numbers from images.
+Extract numbers from images with this nifty API.
